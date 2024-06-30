@@ -62,21 +62,25 @@ const OpError = {
 	InsufficientFunds: 'InsufficientFunds'
 }
 
-if (!(await fs.exists('./data'))) {
-	await fs.mkdir('./data')
+{
+	(async () => {
+		if (!(await fs.stat('./data')).isDirectory()) {
+			await fs.mkdir('./data')
+		}
+		const accountRepo = await initializeStorageFile<Account>('accounts', true)
+		const budgetRepo = await initializeStorageFile<Budget>('budgets', true)
+		const transactionRepo = await initializeStorageFile<Transaction>('transactions', true)
+		
+		const accountController = createAccountController(accountRepo)
+		const transactionController = createTransactionController(transactionRepo, accountRepo, budgetRepo)
+		const budgetController = createBudgetController(budgetRepo, accountRepo)
+		
+		const acc1 = await accountController.create('acc1')
+		await transactionController.income(1800_00, acc1.id)
+		const mercado = await budgetController.create('mercado', acc1.id)
+		await transactionController.transfer(300_00, acc1, mercado)
+	})()
 }
-const accountRepo = await initializeStorageFile<Account>('accounts', true)
-const budgetRepo = await initializeStorageFile<Budget>('budgets', true)
-const transactionRepo = await initializeStorageFile<Transaction>('transactions', true)
-
-const accountController = createAccountController(accountRepo)
-const transactionController = createTransactionController(transactionRepo, accountRepo, budgetRepo)
-const budgetController = createBudgetController(budgetRepo, accountRepo)
-
-const acc1 = await accountController.create('acc1')
-await transactionController.income(1800_00, acc1.id)
-const mercado = await budgetController.create('mercado', acc1.id)
-await transactionController.transfer(300_00, acc1, mercado)
 
 function createAccount(name: string, balance: number): Account {
 	return {
@@ -287,7 +291,7 @@ function createFileRepository<T extends { id: string }>(filename: string, data: 
 					throw OpError.AlreadyExists
 				}
 				data.push(item)
-				await fs.writeFile(`./${filename}.json`, JSON.stringify(data))
+				await fs.writeFile(`./data/${filename}.json`, JSON.stringify(data))
 				return item
 			} catch (e) {
 				throw e
@@ -300,7 +304,7 @@ function createFileRepository<T extends { id: string }>(filename: string, data: 
 					throw OpError.NotFound
 				}
 				data = [...data.slice(0, index), item, ...data.slice(index + 1)]
-				await fs.writeFile(`./${filename}.json`, JSON.stringify(data))
+				await fs.writeFile(`./data/${filename}.json`, JSON.stringify(data))
 				return item
 			} catch (e) {
 				throw e
@@ -314,7 +318,7 @@ function createFileRepository<T extends { id: string }>(filename: string, data: 
 				}
 				const item = data[index]
 				data = [...data.slice(0, index), ...data.slice(index + 1)]
-				await fs.writeFile(`./${filename}.json`, JSON.stringify(data))
+				await fs.writeFile(`./data/${filename}.json`, JSON.stringify(data))
 				return item
 			} catch (e) {
 				throw e

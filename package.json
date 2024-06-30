@@ -1,15 +1,20 @@
 {
   "name": "finn",
-  "module": "src/main.ts",
-  "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/uuid": "^10.0.0"
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon --watch src/**/*.ts --exec ts-node -T src/main.ts"
   },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@types/uuid": "^10.0.0",
+    "ts-node": "^10.9.2"
   }
 }
