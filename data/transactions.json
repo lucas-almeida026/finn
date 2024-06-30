@@ -1,1 +1,1 @@
-[]
+[{"kind":"income","id":"68c958fd-b39d-44a4-8ee1-b2b7a78f4425","accountId":"8e648d9e-1d5f-4c77-b91b-1fabc1bebd13","date":"2024-06-30T17:55:05.511Z","amount":30000},{"id":"1d393552-825d-4f35-afe4-0f0d793445e5","from":{"kind":"account","id":"8e648d9e-1d5f-4c77-b91b-1fabc1bebd13"},"to":{"kind":"budget","id":"990fc54a-c27b-418e-8ac9-e1b2e03b6744"},"date":"2024-06-30T17:55:07.481Z","amount":1000,"kind":"transfer"}]

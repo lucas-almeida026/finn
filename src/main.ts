@@ -1,75 +1,18 @@
 import fs from 'node:fs/promises'
-import { v4 as uuid } from 'uuid'
-import prompts from 'prompts'
+import express from 'express'
+import { Account, Budget, Transaction, createAccountController, createBudgetController, createTransactionController, initializeStorageFile } from './core'
+import { z } from 'zod'
+import ejs from 'ejs'
 
-type Repository<T extends { id: string }> = {
-	getById: (id: string) => Promise<T>
-	getByKey: (key: keyof T, val: string) => Promise<T>
-	getAll: () => T[]
-	insertIfNotExits: (item: T, keys?: (keyof T)[]) => Promise<T>
-	replace: (item: T) => Promise<T>
-	deleteById: (id: string) => Promise<T>
-}
-
-type Account = {
-	id: string
-	name: string
-	balance: number
-}
-
-type Budget = {
-	id: string
-	accountId: string
-	name: string
-	amount: number
-}
-
-type TransactionBase = {
-	id: string
-	amount: number
-	date: string
-}
-
-type IncomeTransaction = TransactionBase & {
-	kind: 'income'
-	accountId: string
-}
-
-type ExpenseTransaction = TransactionBase & {
-	kind: 'expense'
-	target: {
-		kind: 'account' | 'budget'
-		id: string
-	}
-}
-
-type TransferTransaction = TransactionBase & {
-	kind: 'transfer'
-	from: {
-		kind: 'account' | 'budget'
-		id: string
-	}
-	to: {
-		kind: 'account' | 'budget'
-		id: string
-	}
-}
-
-type Transaction = IncomeTransaction | ExpenseTransaction | TransferTransaction
-
-const OpError = {
-	AlreadyExists: 'AlreadyExists',
-	NotFound: 'NotFound',
-	InsufficientFunds: 'InsufficientFunds'
-}
+const app = express()
 
 {
 	(async () => {
-		let currentAccount: Account | null = null
 		try {
 			if (!(await fs.stat('./data')).isDirectory()) {
 				await fs.mkdir('./data')
 			}
+			const tailwindcss = await fs.readFile('./src/styles/output.css', 'utf8')
 			const accountRepo = await initializeStorageFile<Account>('accounts', false)
 			const budgetRepo = await initializeStorageFile<Budget>('budgets', false)
 			const transactionRepo = await initializeStorageFile<Transaction>('transactions', false)
@@ -78,317 +21,121 @@ const OpError = {
 			const transactionController = createTransactionController(transactionRepo, accountRepo, budgetRepo)
 			const budgetController = createBudgetController(budgetRepo, accountRepo)
 			
-			if (accountRepo.getAll().length === 0) {
-				console.log('You have no accounts. Please create one.')
-				const { name } = await prompts({
-					type: 'text',
-					name: 'name',
-					message: 'Account name:',
-					initial: 'main'
-				})
-				const { initialBalance } = await prompts({
-					type: 'number',
-					name: 'initialBalance',
-					message: 'Initial balance:',
-					initial: 0
-				})
-				await accountController.create(name, initialBalance)
-			} else if (accountRepo.getAll().length === 1) {
-				console.log('Using account: ' + accountRepo.getAll()[0].name)
-				currentAccount = accountRepo.getAll()[0]
-			} else {
-				const { id } = await prompts({
-					type: 'select',
-					name: 'id',
-					message: 'Select an account:',
-					choices: accountRepo.getAll().map(a => ({ title: `${a.name} - R$ ${a.balance}`, value: a.id })),
-				})
-				currentAccount = await accountRepo.getById(id)
+			const baseTemplate = ejs.compile(await fs.readFile('./src/templates/base.ejs', 'utf8'))
+			const indexPage = ejs.compile(await fs.readFile('./src/templates/index.ejs', 'utf8'))
+
+			function page(title: string, body: ejs.TemplateFunction, data: any) {
+				return baseTemplate({title, body: body(data), tailwindcss})
 			}
-			const { option } = await prompts({
-				type: 'select',
-				name: 'option',
-				message: 'What do you want to do?',
-				choices: [
-					{ title: 'Expense', value: 'expense' },
-					{ title: 'Transfer', value: 'transfer' },
-					{ title: 'Income', value: 'income' },
-					{ title: 'Show balance', value: 'balance' },
-					{ title: 'Exit', value: 'exit' },
-				],
+
+			app.get('/', (req, res) => {
+				res.send(page('asdf2', indexPage, {}))
 			})
-			// const acc1 = await accountController.create('acc1')
-			// await transactionController.income(1800_00, acc1.id)
-			// const mercado = await budgetController.create('mercado', acc1.id)
-			// await transactionController.transfer(300_00, acc1, mercado)
-			// await transactionController.expense(45_00, mercado.id)
+
+			app.post('/accounts', async (req, res) => {
+				const accountSchema = z.object({
+					name: z.string(),
+					balance: z.number().optional().default(0)
+				})
+
+				const parsed = accountSchema.safeParse(req.body)
+				if (!parsed.success) {
+					return res.status(400).send(parsed.error)
+				}
+				const { name, balance } = parsed.data
+				const account = await accountController.create(name, balance)
+				res.send(account)
+			})
+
+			app.get('/accounts', (req, res) => {
+				const accounts = accountRepo.getAll()
+				res.send(accounts)
+			})
+
+			app.post('/budgets', async (req, res) => {
+				const budgetSchema = z.object({
+					name: z.string(),
+					accountId: z.string(),
+				})
+
+				const parsed = budgetSchema.safeParse(req.body)
+				if (!parsed.success) {
+					return res.status(400).send(parsed.error)
+				}
+				const { name, accountId } = parsed.data
+				const budget = await budgetController.create(name, accountId)
+				res.send(budget)
+			})
+
+			app.get('/budgets', (req, res) => {
+				const budgets = budgetRepo.getAll()
+				res.send(budgets)
+			})
+
+			app.post('/income', async (req, res) => {
+				const incomeSchema = z.object({
+					amount: z.number(),
+					accountId: z.string(),
+					date: z.string().optional()
+				})
+
+				const parsed = incomeSchema.safeParse(req.body)
+				if (!parsed.success) {
+					return res.status(400).send(parsed.error)
+				}
+				const { amount, accountId, date } = parsed.data
+				const account = await transactionController.income(amount, accountId, date)
+				res.send(account)
+
+			})
+
+			app.post('/expense', async (req, res) => {
+				const expenseSchema = z.object({
+					amount: z.number(),
+					targetId: z.string(),
+					date: z.string().optional()
+				})
+
+				const parsed = expenseSchema.safeParse(req.body)
+				if (!parsed.success) {
+					return res.status(400).send(parsed.error)
+				}
+				const { amount, targetId, date } = parsed.data
+				const account = await transactionController.expense(amount, targetId, date)
+				res.send(account)
+			})
+
+			app.post('/transfer', async (req, res) => {
+				try {
+					const transferSchema = z.object({
+						fromId: z.string(),
+						toId: z.string(),
+						amount: z.number(),
+						date: z.string().optional()
+					})
+	
+					const parsed = transferSchema.safeParse(req.body)
+					if (!parsed.success) {
+						return res.status(400).send(parsed.error)
+					}
+					const { fromId, toId, amount, date } = parsed.data
+					const result = await transactionController.transfer(amount, fromId, toId, date)
+					res.send(result)
+				} catch(e) {
+					console.error(e)
+					res.status(500).send(e)
+				}
+			})
+
+			app.get('*', (_, res) => {
+				res.status(404).send({error: 'not found'})
+			})
+			
+			app.listen(2901, () => {
+				console.log('API listening on port 2901!')
+			})
 		} catch(e) {
 			console.error(e)
 		}
 	})()
-}
-
-function createAccount(name: string, balance: number): Account {
-	return {
-		id: uuid(),
-		name,
-		balance
-	}
-}
-
-function createBudget(name: string, amount: number, accountId: string): Budget {
-	return {
-		id: uuid(),
-		name,
-		amount,
-		accountId
-	}
-}
-
-function createTransaction(amount: number, date: string): {
-	income: (account: Account) => IncomeTransaction
-	expense: (account: Account | Budget) => ExpenseTransaction
-	transfer: (from: Account | Budget, to: Account | Budget) => TransferTransaction
-} {
-	return {
-		income: (account) => ({
-			kind: 'income',
-			id: uuid(),
-			accountId: account.id,
-			date,
-			amount,
-		}),
-		expense: (account) => ({
-			kind: 'expense',
-			id: uuid(),
-			target: {
-				kind: 'account',
-				id: account.id
-			},
-			date,
-			amount,
-		}),
-		transfer: (from, to) => ({
-			id: uuid(),
-			from: {
-				kind: 'accountId' in from ? 'budget' : 'account',
-				id: from.id
-			},
-			to: {
-				kind: 'accountId' in to ? 'budget' : 'account',
-				id: to.id
-			},
-			date,
-			amount,
-			kind: 'transfer'
-		})
-	}
-}
-
-function createAccountController(accountRepo: Repository<Account>) {
-	return {
-		create: async (name: string, balance = 0) => {
-			try {
-				const account = createAccount(name, balance)
-				await accountRepo.insertIfNotExits(account, ['name'])
-				console.log(`Account "${name}" was created successfully`)
-				return account
-			} catch (e) {
-				if (e === OpError.AlreadyExists) {
-					console.log(`Account "${name}" already exists`)
-					return await accountRepo.getByKey('name', name)
-				}
-				throw e
-			}
-		}
-	}
-}
-
-function createTransactionController(
-	transactionRepo: Repository<Transaction>,
-	accountRepo: Repository<Account>,
-	budgetRepo: Repository<Budget>
-) {
-	return {
-		income: async (amount: number, accountId: string, date?: string) => {
-			try {
-				const account = await accountRepo.getById(accountId)
-				const transaction = createTransaction(amount, date ?? today()).income(account)
-				await transactionRepo.insertIfNotExits(transaction)
-				account.balance += amount
-				await accountRepo.replace(account)
-				console.log(`Income of ${(amount / 100).toFixed(2)} successfully computed`)
-			} catch (e) {
-				throw e
-			}
-		},
-		expense: async (amount: number, targetId: string, date?: string) => {
-			try {
-				const target = await firstResolved<Account | Budget>([
-					accountRepo.getById(targetId),
-					budgetRepo.getById(targetId)
-				])
-				const transaction = createTransaction(amount, date ?? today()).expense(target)
-				await transactionRepo.insertIfNotExits(transaction)
-				if ('balance' in target) {
-					target.balance -= amount
-					await accountRepo.replace(target)
-				} else {
-					target.amount -= amount
-					await budgetRepo.replace(target)
-				}
-				console.log(`Expense of ${(amount / 100).toFixed(2)} successfully computed`)
-			} catch (e) {
-				throw e
-			}
-		},
-		transfer: async (amount: number, _from: Account | Budget, _to: Account | Budget, date?: string) => {
-			try {
-				const from = await (
-					'accountId' in _from
-						? budgetRepo.getById(_from.id)
-						: accountRepo.getById(_from.id)
-				)
-				const to = await (
-					'accountId' in _to
-						? budgetRepo.getById(_to.id)
-						: accountRepo.getById(_to.id)
-				)
-				const current = 'balance' in from ? from.balance : from.amount
-				if (current - amount < 0) {
-					throw OpError.InsufficientFunds
-				}
-
-				const transaction = createTransaction(amount, date ?? today()).transfer(from, to)
-				await transactionRepo.insertIfNotExits(transaction)
-				if ('accountId' in from) {
-					from.amount -= amount
-					await budgetRepo.replace(from)
-				} else {
-					from.balance -= amount
-					await accountRepo.replace(from)
-				}
-				if ('accountId' in to) {
-					to.amount += amount
-					await budgetRepo.replace(to)
-				} else {
-					to.balance += amount
-					await accountRepo.replace(to)
-				}
-			} catch (e) {
-				throw e
-			}
-		}
-	}
-}
-
-function createBudgetController(budgetRepo: Repository<Budget>, accountRepo: Repository<Account>) {
-	return {
-		create: async (name: string, accountId: string, amount = 0) => {
-			try {
-				const account = await accountRepo.getById(accountId)
-				const budget = createBudget(name, amount, account.id)
-				await budgetRepo.insertIfNotExits(budget, ['name'])
-				return budget
-			} catch (e) {
-				throw e
-			}
-		}
-	}
-}
-
-async function initializeStorageFile<T extends { id: string }>(filename: string, reset = false) {
-	try {
-		const data = JSON.parse(await fs.readFile(`./data/${filename}.json`, 'utf8'))
-		return createFileRepository<T>(filename, reset ? [] : data)
-	} catch (e) {
-		console.log(`creating ${filename} file...`)
-		try {
-			await fs.writeFile(`./data/${filename}.json`, JSON.stringify([]))
-			console.log(`${filename} file created`)
-			return createFileRepository<T>(filename, [])
-		} catch (e2) {
-			throw new Error(`Could not create ${filename} file\n`)
-		}
-	}
-}
-
-function createFileRepository<T extends { id: string }>(filename: string, data: T[]): Repository<T> {
-	return {
-		getById: async (id: string) => {
-			const index = data.findIndex(e => e.id === id)
-			if (index === -1) {
-				throw OpError.NotFound
-			}
-			return data[index]
-		},
-		getByKey: async (key: keyof T, val: string) => {
-			const index = data.findIndex(e => e[key] === val)
-			if (index === -1) {
-				throw OpError.NotFound
-			}
-			return data[index]
-		},
-		getAll: () => data,
-		insertIfNotExits: async (item: T, keys = []) => {
-			try {
-				const index = data.findIndex(e => e.id === item.id || keys.some(k => e[k] === item[k]))
-				if (index !== -1) {
-					throw OpError.AlreadyExists
-				}
-				data.push(item)
-				await fs.writeFile(`./data/${filename}.json`, JSON.stringify(data))
-				return item
-			} catch (e) {
-				throw e
-			}
-		},
-		replace: async (item: T) => {
-			try {
-				const index = data.findIndex(e => e.id === item.id)
-				if (index === -1) {
-					throw OpError.NotFound
-				}
-				data = [...data.slice(0, index), item, ...data.slice(index + 1)]
-				await fs.writeFile(`./data/${filename}.json`, JSON.stringify(data))
-				return item
-			} catch (e) {
-				throw e
-			}
-		},
-		deleteById: async (id: string) => {
-			try {
-				const index = data.findIndex(e => e.id === id)
-				if (index === -1) {
-					throw OpError.NotFound
-				}
-				const item = data[index]
-				data = [...data.slice(0, index), ...data.slice(index + 1)]
-				await fs.writeFile(`./data/${filename}.json`, JSON.stringify(data))
-				return item
-			} catch (e) {
-				throw e
-			}
-		}
-	}
-}
-
-function today() {
-	return new Date().toISOString().split('T')[0]
-}
-
-async function firstResolved<T>(promises: Promise<T>[]): Promise<T> {
-	return new Promise((resolve, reject) => {
-		let rejectedCount = 0
-		const totalPromises = promises.length
-
-		promises.forEach(promise => {
-			promise.then(resolve).catch(() => {
-				rejectedCount++
-				if (rejectedCount === totalPromises) {
-					reject(new Error('All promises were rejected'))
-				}
-			})
-		})
-	})
 }
