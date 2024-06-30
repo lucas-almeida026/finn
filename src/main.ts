@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import { v4 as uuid } from 'uuid'
+import prompts from 'prompts'
 
 type Repository<T extends { id: string }> = {
 	getById: (id: string) => Promise<T>
@@ -64,21 +65,66 @@ const OpError = {
 
 {
 	(async () => {
-		if (!(await fs.stat('./data')).isDirectory()) {
-			await fs.mkdir('./data')
+		let currentAccount: Account | null = null
+		try {
+			if (!(await fs.stat('./data')).isDirectory()) {
+				await fs.mkdir('./data')
+			}
+			const accountRepo = await initializeStorageFile<Account>('accounts', false)
+			const budgetRepo = await initializeStorageFile<Budget>('budgets', false)
+			const transactionRepo = await initializeStorageFile<Transaction>('transactions', false)
+			
+			const accountController = createAccountController(accountRepo)
+			const transactionController = createTransactionController(transactionRepo, accountRepo, budgetRepo)
+			const budgetController = createBudgetController(budgetRepo, accountRepo)
+			
+			if (accountRepo.getAll().length === 0) {
+				console.log('You have no accounts. Please create one.')
+				const { name } = await prompts({
+					type: 'text',
+					name: 'name',
+					message: 'Account name:',
+					initial: 'main'
+				})
+				const { initialBalance } = await prompts({
+					type: 'number',
+					name: 'initialBalance',
+					message: 'Initial balance:',
+					initial: 0
+				})
+				await accountController.create(name, initialBalance)
+			} else if (accountRepo.getAll().length === 1) {
+				console.log('Using account: ' + accountRepo.getAll()[0].name)
+				currentAccount = accountRepo.getAll()[0]
+			} else {
+				const { id } = await prompts({
+					type: 'select',
+					name: 'id',
+					message: 'Select an account:',
+					choices: accountRepo.getAll().map(a => ({ title: `${a.name} - R$ ${a.balance}`, value: a.id })),
+				})
+				currentAccount = await accountRepo.getById(id)
+			}
+			const { option } = await prompts({
+				type: 'select',
+				name: 'option',
+				message: 'What do you want to do?',
+				choices: [
+					{ title: 'Expense', value: 'expense' },
+					{ title: 'Transfer', value: 'transfer' },
+					{ title: 'Income', value: 'income' },
+					{ title: 'Show balance', value: 'balance' },
+					{ title: 'Exit', value: 'exit' },
+				],
+			})
+			// const acc1 = await accountController.create('acc1')
+			// await transactionController.income(1800_00, acc1.id)
+			// const mercado = await budgetController.create('mercado', acc1.id)
+			// await transactionController.transfer(300_00, acc1, mercado)
+			// await transactionController.expense(45_00, mercado.id)
+		} catch(e) {
+			console.error(e)
 		}
-		const accountRepo = await initializeStorageFile<Account>('accounts', true)
-		const budgetRepo = await initializeStorageFile<Budget>('budgets', true)
-		const transactionRepo = await initializeStorageFile<Transaction>('transactions', true)
-		
-		const accountController = createAccountController(accountRepo)
-		const transactionController = createTransactionController(transactionRepo, accountRepo, budgetRepo)
-		const budgetController = createBudgetController(budgetRepo, accountRepo)
-		
-		const acc1 = await accountController.create('acc1')
-		await transactionController.income(1800_00, acc1.id)
-		const mercado = await budgetController.create('mercado', acc1.id)
-		await transactionController.transfer(300_00, acc1, mercado)
 	})()
 }
 
