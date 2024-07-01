@@ -22,7 +22,12 @@ const app = express();
 	}
 
 	app.get('/', async (req, res) => {
-		return res.send(page('Home', indexPage, {}))
+		const {data: accounts} = await api.get('/accounts')
+		return res.send(page('Home', indexPage, { accounts }))
+	})
+
+	app.get('/account-list', async (req, res) => {
+		return setTimeout(() => res.send('<p>accounts list</p>'), 1000)
 	})
 
 	app.listen(2900, () => console.log('Client started on port 2900'))

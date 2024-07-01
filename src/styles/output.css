@@ -578,6 +578,51 @@ video {
   color: rgb(255 255 255 / var(--tw-text-opacity));
 }
 
+.flex {
+  display: flex;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.max-w-xl {
+  max-width: 36rem;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.rounded-sm {
+  border-radius: 0.125rem;
+}
+
+.border-2 {
+  border-width: 2px;
+}
+
+.border-solid {
+  border-style: solid;
+}
+
+.border-black {
+  --tw-border-opacity: 1;
+  border-color: rgb(0 0 0 / var(--tw-border-opacity));
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+
 .text-3xl {
   font-size: 1.875rem;
   line-height: 2.25rem;

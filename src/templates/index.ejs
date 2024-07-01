@@ -1,4 +1,17 @@
-<main>
-	<h1 class="text-3xl font-bold underline text-blue-500">main page</h1>
-	<button class="button uppercase secondary">button</button>
+<main class="w-full flex flex-col items-center">
+	<div class="w-full max-w-xl">
+		<%if (!accounts.length) { %>
+			<h3>No accounts to display</h3>
+			<button class="button primary">create account</button>
+		<%} else {%>
+		<div class="flex justify-between w-full">
+			<button class="button primary" hx-get="/account-list" hx-replace-url="/account/home">create account</button>
+			<select id="account">
+				<%for (const acc of accounts) {%>
+					<option value="<%= acc.id %>"><%= acc.name %></option>
+				<%}%>
+			</select>
+		</div>
+		<%}%>
+	</div>
 </main>
