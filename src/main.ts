@@ -131,8 +131,8 @@ const app = express()
 				res.status(404).send({error: 'not found'})
 			})
 			
-			app.listen(2901, () => {
-				console.log('API listening on port 2901!')
+			app.listen(2900, () => {
+				console.log('API listening on port 2900!')
 			})
 		} catch(e) {
 			console.error(e)
