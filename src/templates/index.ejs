@@ -1,17 +1,10 @@
 <main class="w-full flex flex-col items-center">
 	<div class="w-full max-w-xl">
 		<%if (!accounts.length) { %>
-			<h3>No accounts to display</h3>
-			<button class="button primary">create account</button>
+			<span hx-get="/account/create" hx-replace-url="/account/create" hx-trigger="load"></span>
 		<%} else {%>
-		<div class="flex justify-between w-full">
-			<button class="button primary" hx-get="/account-list" hx-replace-url="/account/home">create account</button>
-			<select id="account">
-				<%for (const acc of accounts) {%>
-					<option value="<%= acc.id %>"><%= acc.name %></option>
-				<%}%>
-			</select>
-		</div>
+			<% const [acc] = accounts%>
+			<p><%= acc.id %></p>
 		<%}%>
 	</div>
 </main>
