@@ -3,6 +3,7 @@ import express from 'express'
 import { startAPI } from './api'
 import axios from 'axios'
 import ejs from 'ejs'
+import { getComponents } from './components'
 
 const app = express();
 
@@ -18,6 +19,8 @@ const app = express();
 	const indexPage = ejs.compile(await fs.readFile('./src/templates/index.ejs', 'utf8'))
 	const createAccPage = ejs.compile(await fs.readFile('./src/templates/create-account.ejs', 'utf8'))
 
+	const C = await getComponents()
+
 	function page(title: string, body: ejs.TemplateFunction, data: any) {
 		return baseTemplate({ title, body: body(data), tailwindcss })
 	}
@@ -32,6 +35,7 @@ const app = express();
 	})
 
 	app.get('/account/create', (req, res) => {
+		console.log(C.vstack({align: 'center'}, C.heading1('asdf'), C.heading1('asdf2'), C.heading1('asdf3')))
 		return res.send(page('Create Account', createAccPage, {}))
 	})
 
