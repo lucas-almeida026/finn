@@ -1,14 +1,17 @@
 user stories:
 - I can create budgets that are separate from my main account
-  - create main account if not exists
-  - main account is automatically used if exists
+	- create main account if not exists
+	- main account is automatically used if exists
 - I can log incomes, expenses and transfers easily
-  - single action button triggers kind selection (income, expense, transfer)
-  - each action has a unique shortcut
-  - uses sensible default values
-  - categories are based on budgets and previous transactions (opportunity for improvement -> category list)
+	- single action button triggers kind selection (income, expense, transfer)
+	- each action has a unique shortcut
+	- uses sensible default values
+	- categories are based on budgets and previous transactions (opportunity for improvement -> category list)
 - Expenses are automatically deducted from my budgets when possible
 - I can see my "real" balance (balance without budgets included) and my "raw" balance (balance with budgets included)
 - I can set future income, expenses and transfers without them affecting the current month balance
 - I can make reports and charts of income, expense, transfer, budget and balance over time
 
+tasks:
+[ ] create create-account page
+[ ] main page expects main account if does not exists redirect to create-account page, if exists ...
