@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --watch src/**/*.{ts,ejs} --ext ts,ejs --exec ts-node -T src/main.ts",
+    "dev": "concurrently \"pnpx tailwindcss -i src/styles/input.css -o src/styles/output.css --watch\" \"nodemon --watch src/**/*.{ts,ejs} --ext ts,ejs --exec ts-node -T src/main.ts\"",
     "local": "ts-node -T src/main.ts"
   },
   "keywords": [],
@@ -23,6 +23,7 @@
     "@types/node": "^20.14.9",
     "@types/prompts": "^2.4.9",
     "@types/uuid": "^10.0.0",
+    "concurrently": "^8.2.2",
     "nodemon": "^3.1.4",
     "tailwindcss": "^3.4.4",
     "ts-node": "^10.9.2"
