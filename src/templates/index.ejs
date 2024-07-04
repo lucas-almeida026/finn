@@ -1,10 +1,5 @@
 <main class="w-full flex flex-col items-center">
 	<div class="w-full max-w-xl">
-		<%if (!accounts.length) { %>
-			<span hx-get="/account/create" hx-replace-url="/account/create" hx-trigger="load"></span>
-		<%} else {%>
-			<% const [acc] = accounts%>
-			<p><%= acc.id %></p>
-		<%}%>
+		Balance: <%= account.balance %>
 	</div>
 </main>

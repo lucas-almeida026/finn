@@ -15,6 +15,7 @@ export function startAPI() {
     return new Promise(async (resolve, reject) => {
         try {
             const app = express()
+			app.use(express.json())
             if (!(await fs.stat('./data')).isDirectory()) {
                 await fs.mkdir('./data')
             }
@@ -33,7 +34,7 @@ export function startAPI() {
             app.post('/accounts', async (req, res) => {
                 const accountSchema = z.object({
                     name: z.string(),
-                    balance: z.number().optional().default(0)
+                    balance: z.string().transform(x => parseInt(x) || 0).optional()
                 })
 
                 const parsed = accountSchema.safeParse(req.body)
