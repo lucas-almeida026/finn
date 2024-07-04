@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import express from 'express';
 import { z } from 'zod';
+import cors from 'cors'
 import {
     Account,
     Budget,
@@ -15,6 +16,7 @@ export function startAPI() {
     return new Promise(async (resolve, reject) => {
         try {
             const app = express()
+			app.use(cors({ origin: '*' }))
 			app.use(express.json())
             if (!(await fs.stat('./data')).isDirectory()) {
                 await fs.mkdir('./data')
@@ -108,7 +110,7 @@ export function startAPI() {
                     const transferSchema = z.object({
                         fromId: z.string(),
                         toId: z.string(),
-                        amount: z.number(),
+                        amount: z.string().transform(x => parseInt(x) || 0),
                         date: z.string().optional()
                     })
 

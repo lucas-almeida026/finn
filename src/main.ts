@@ -20,21 +20,25 @@ app.use(express.urlencoded({ extended: true }));
 			accounts: {
 				list: () => client.get<Account[]>('/accounts'),
 				create: (data: any) => client.post<Account>('/accounts', data)
-			}
+			},
+			transfer: (data: any) => client.post<{from: Account, to: Account}>('/transfer', data)
 		}
 	})()
 
 	const tailwindcss = await fs.readFile('./src/styles/output.css', 'utf8')
+	const floatingBtnJs = await fs.readFile('./src/scripts/floatingBtn.js', 'utf8')
 	const baseTemplate = ejs.compile(await fs.readFile('./src/templates/base.ejs', 'utf8'))
 	const indexPage = ejs.compile(await fs.readFile('./src/templates/index.ejs', 'utf8'))
 	const createAccPage = ejs.compile(await fs.readFile('./src/templates/create-account.ejs', 'utf8'))
 
-	function page(title: string, body: ejs.TemplateFunction, data: any) {
-		return baseTemplate({ title, body: body(data), tailwindcss })
+	function page(title: string, body: ejs.TemplateFunction, data: any, script = '0;') {
+		return baseTemplate({ title, body: body(data), tailwindcss, script })
 	}
 
-	function redirect(url: string) {
-		return baseTemplate({ title: '', body: `<div hx-get="${url}" hx-replace-url="${url}" hx-trigger="load" hx-target="body"></div>`, tailwindcss})
+	const HomePage = (data: any) => page('Home', indexPage, data, floatingBtnJs)
+
+	function redirect(url: string, script = '0;') {
+		return baseTemplate({ title: '', body: `<div hx-get="${url}" hx-replace-url="${url}" hx-trigger="load" hx-target="body"></div>`, tailwindcss, script})
 	}
 
 	app.get('/', async (req, res) => {
@@ -53,7 +57,7 @@ app.use(express.urlencoded({ extended: true }));
 			console.log('Account not found')
 			return res.send(redirect('/account/create'))
 		}
-		return res.send(page('Home', indexPage, { account }))
+		return res.send(HomePage({ account }))
 	})
 
 	app.get('/account-list', async (req, res) => {
@@ -70,11 +74,22 @@ app.use(express.urlencoded({ extended: true }));
 		.then(({data: created}) => {
 			res.status(200).send(redirect(`/?accountId=${created.id}`))
 		})
-		.catch(({response: {data: err}}) => {
-			console.log(err)
+		.catch((err) => {
+			console.log(err?.data?.message ?? err?.data ?? err)
 			res.status(500).send('')
 		})
 
+	})
+
+	app.post('/transfer', async (req, res) => {
+		try {
+			const {data: result} = await api.transfer(req.body)
+			res.setHeader('HX-Refresh', 'true')
+			res.send('')
+		} catch (e: any) {
+			console.error(e?.response?.data?.message ?? e?.response?.data ?? e)
+			res.status(500).send('')
+		}
 	})
 
 	app.listen(2900, () => console.log('Client started on port 2900'))
