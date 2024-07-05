@@ -64,7 +64,7 @@ app.use(express.urlencoded({ extended: true }));
 			console.log('Account not found')
 			return res.send(redirect('/account/create'))
 		}
-		return res.send(HomePage({ account, budgets }))
+		return res.send(HomePage({ accounts, account, budgets }))
 	})
 
 	app.get('/account-list', async (req, res) => {

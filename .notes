@@ -21,8 +21,8 @@ tasks:
 [x] transfer from account to account
 
 // budgets v1
-[ ] create budget to account
-[ ] list budgets from account
+[x] create budget to account
+[x] list budgets from account
 
 // transactions v2
 [ ] expense to budget
