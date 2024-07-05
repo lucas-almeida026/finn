@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"pnpx tailwindcss -i src/styles/input.css -o src/styles/output.css --watch\" \"nodemon --watch src/**/*.{js,ts,ejs} --ext js,ts,ejs --exec ts-node -T src/main.ts\"",
+    "dev": "concurrently \"pnpx tailwindcss -i src/styles/input.css -o src/styles/output.css --watch\" \"nodemon --watch ./**/*.{js,ts,ejs,json} --ext js,ts,ejs,json --exec ts-node -T src/main.ts\"",
     "local": "ts-node -T src/main.ts"
   },
   "keywords": [],

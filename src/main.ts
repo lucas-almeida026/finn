@@ -3,7 +3,7 @@ import express from 'express'
 import { startAPI } from './api'
 import axios from 'axios'
 import ejs from 'ejs'
-import { Account } from './core'
+import { Account, Budget } from './core'
 
 const app = express();
 app.use(express.json());
@@ -21,7 +21,13 @@ app.use(express.urlencoded({ extended: true }));
 				list: () => client.get<Account[]>('/accounts'),
 				create: (data: any) => client.post<Account>('/accounts', data)
 			},
-			transfer: (data: any) => client.post<{from: Account, to: Account}>('/transfer', data)
+			transfer: (data: any) => client.post<{from: Account, to: Account}>('/transfer', data),
+			budgets: {
+				list: (accountId: string) => client.get<Budget[]>('/budgets', {
+					params: accountId ? { accountId } : {}
+				}),
+				create: (data: any) => client.post<Budget>('/budgets', data)
+			}
 		}
 	})()
 
@@ -53,11 +59,12 @@ app.use(express.urlencoded({ extended: true }));
 			return res.send(redirect(`/?accountId=${account.id}`))
 		}
 		const account = accounts.find((x: any) => x.id === accountId)
+		const { data: budgets } = await api.budgets.list(String(accountId))
 		if (!account) {
 			console.log('Account not found')
 			return res.send(redirect('/account/create'))
 		}
-		return res.send(HomePage({ account }))
+		return res.send(HomePage({ account, budgets }))
 	})
 
 	app.get('/account-list', async (req, res) => {

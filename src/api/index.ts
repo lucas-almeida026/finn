@@ -69,8 +69,12 @@ export function startAPI() {
             })
 
             app.get('/budgets', (req, res) => {
+				const { accountId } = req.query
+				if (!accountId) {
+					return res.status(400).send('accountId is required')
+				}
                 const budgets = budgetRepo.getAll()
-                res.send(budgets)
+                res.send(budgets.filter(x => x.accountId === accountId))
             })
 
             app.post('/income', async (req, res) => {
