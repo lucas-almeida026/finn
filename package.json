@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"pnpx tailwindcss -i src/styles/input.css -o src/styles/output.css --watch\" \"nodemon --watch src/**/*.{ts,ejs} --ext ts,ejs --exec ts-node -T src/main.ts\"",
+    "dev": "concurrently \"pnpx tailwindcss -i src/styles/input.css -o src/styles/output.css --watch\" \"nodemon --watch src/**/*.{js,ts,ejs} --ext js,ts,ejs --exec ts-node -T src/main.ts\"",
     "local": "ts-node -T src/main.ts"
   },
   "keywords": [],
@@ -12,12 +12,14 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^1.7.2",
+    "cors": "^2.8.5",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "uuid": "^10.0.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/ejs": "^3.1.5",
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.9",
