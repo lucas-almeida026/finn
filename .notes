@@ -13,5 +13,19 @@ user stories:
 - I can make reports and charts of income, expense, transfer, budget and balance over time
 
 tasks:
-[ ] create create-account page
-[ ] main page expects main account if does not exists redirect to create-account page, if exists ...
+[x] create create-account page
+
+// transaction v1
+[x] income to account
+[x] expense to account
+[ ] transfer from account to account
+
+// budgets v1
+[ ] create budget to account
+[ ] list budgets from account
+
+// transactions v2
+[ ] expense to budget
+[ ] transfer from budget to account
+[ ] transfer from account to budget
+[ ] transfer from budget to budget
