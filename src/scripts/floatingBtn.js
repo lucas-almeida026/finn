@@ -24,6 +24,7 @@ btnTransact.addEventListener('click', () => {
 	}
 })
 
+
 function showFormFn(form) {
 	form.classList.replace('hidden', 'flex')
 	showForm.value = form
@@ -31,6 +32,17 @@ function showFormFn(form) {
 	form.classList.remove('hidden')
 	bgForm.classList.replace('-z-10', 'z-10')
 	bgForm.classList.replace('opacity-0', 'opacity-100')
+}
+
+function replaceFormFn(form) {
+	const currentForm = showForm.value
+	if (currentForm !== null) {
+		currentForm.classList.replace('flex', 'hidden')
+		bgForm.removeChild(currentForm)
+		form.classList.replace('hidden', 'flex')
+		showForm.value = form
+		bgForm.appendChild(form)
+	}
 }
 
 function hideFormFn() {
@@ -97,13 +109,21 @@ btnIncome.addEventListener('click', () => {
 })
 
 btnExpense.addEventListener('click', () => {
-	formExpenseVisible = !formExpenseVisible
-	formExpense.classList.toggle('hidden')
+	if (showForm.value === null) {
+		showFormFn(formExpense)
+	} else if (showForm.value === formTransfer) {
+		replaceFormFn(formExpense)
+	} else {
+		hideFormFn()
+		showButtons.value = false
+	}
 })
 
 btnTransfer.addEventListener('click', () => {
 	if (showForm.value === null) {
 		showFormFn(formTransfer)
+	} else if (showForm.value === formExpense) {
+		replaceFormFn(formTransfer)
 	} else {
 		hideFormFn()
 		showButtons.value = false
@@ -130,4 +150,19 @@ btnNewBudget.addEventListener('click', async () => {
 		console.error(e)
 		alert('Could not create budget')
 	}
+})
+
+$notifications.subscribe('resetForm', () => {
+	const currentForm = showForm.value
+	if (currentForm !== null) {
+		const inputs = currentForm.getElementsByTagName('input')
+		for (const input of inputs) {
+			input.value = ''
+		}
+	}
+})
+
+$notifications.subscribe('closeForm', () => {
+	hideFormFn()
+	showButtons.value = false
 })
