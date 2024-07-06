@@ -95,7 +95,7 @@ export function startAPI() {
 
             app.post('/expense', async (req, res) => {
                 const expenseSchema = z.object({
-                    amount: z.number(),
+                    amount: z.string().transform(x => parseInt(x) || 0),
                     targetId: z.string(),
                     date: z.string().optional()
                 })

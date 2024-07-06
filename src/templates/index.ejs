@@ -1,6 +1,7 @@
 <main class="w-full flex flex-col items-center">
+	<div id="bg-form" class="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-75 -z-10 transition-all duration-100 opacity-0"></div>
 	<div class="w-full max-w-xl">
-		<h3 class="text-xl mb-3 font-bold">Balance: R$<%= (account.balance / 100).toFixed(2) %></h3>
+		<h3 id="account-balance"  class="text-xl mb-3 font-bold">Balance: R$<%= (account.balance / 100).toFixed(2) %></h3>
 		<div id="budget-list">
 			<h2 class="text-xl font-bold">Budgets:</h2>
 			<div class="grid grid-cols-5 font-bold">
@@ -10,20 +11,54 @@
 			<%for (const b of budgets) {%>
 				<div class="grid grid-cols-5">
 					<h3 class="col-span-3"><%= b.name %></h3>
-					<h3 class="col-span-2">R$<%= (b.amount / 100).toFixed(2)%></h3>
+					<h3 id="bgt-<%= b.id %>-balance" class="col-span-2">R$<%= (b.amount / 100).toFixed(2)%></h3>
 				</div>
 			<%}%>
 			<button id="btn-new-budget" class="button primary">New budget</button>
 		</div>
 	</div>
-	<form class="hidden" id="form-transfer" hx-post="/transfer">
-		<div class="w-full max-w-xl">
+	<div id="form-transfer" class="hidden w-full h-screen flex-col justify-center items-center">
+		<form hx-post="/transfer" class="w-5/6 bg-gray-100 rounded-lg p-5">
+			<div class="w-full max-w-xl">
+				<label for="amount" class="text-slate-700">Amount in cents</label>
+				<input id="amount" name="amount" type="number" min="1" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none" />
+			</div>
+			<div class="w-full max-w-xl">
+				<label for="fromId" class="text-slate-700">From</label>
+				<select name="fromId" id="fromId" value="<%= account.id %>" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
+					<%for (const a of accounts) {%>
+						<option value="<%= a.id %>" <%= a.id === account.id ? 'selected' : ''%>>ACC: <%= a.name %></option>
+					<%}%>
+					<%for (const b of budgets) {%>
+						<option value="<%= b.id %>">BGT: <%= b.name %></option>
+					<%}%>
+				</select>
+			</div>
+			<div class="w-full max-w-xl">
+				<label for="toId" class="text-slate-700">To</label>
+				<select name="toId" id="toId" value="" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
+					<option value="" selected disabled>Select</option>
+					<%for (const b of budgets){%>
+						<option value="<%= b.id %>">BGT: <%= b.name %></option>
+					<%}%>
+					<%for (const a of accounts.filter(x => x.id !== account.id)){%>
+						<option value="<%= a.id %>">ACC: <%= a.name %></option>
+					<%}%>
+				</select>
+			</div>
+			<button type="submit" class="mt-4 w-full max-w-xl rounded-md bg-blue-500 text-white px-3 py-1">Transfer</button>
+		</form>
+	</div>
+	
+	<form id="form-expense" hx-post="/expense" class="hidden">
+		<div class="w-full max-w-xl mb-4">
 			<label for="amount" class="text-slate-700">Amount in cents</label>
 			<input id="amount" name="amount" type="number" min="1" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none" />
 		</div>
-		<div class="w-full max-w-xl">
-			<label for="fromId" class="text-slate-700">From</label>
-			<select name="fromId" id="fromId" value="<%= account.id %>" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
+		<div class="w-full max-w-xl mb-4">
+			<label for="target" class="text-slate-700">Target</label>
+			
+			<select name="target" id="target" value="<%= account.id %>" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
 				<%for (const a of accounts) {%>
 					<option value="<%= a.id %>" <%= a.id === account.id ? 'selected' : ''%>>ACC: <%= a.name %></option>
 				<%}%>
@@ -32,24 +67,12 @@
 				<%}%>
 			</select>
 		</div>
-		<div class="w-full max-w-xl">
-			<label for="toId" class="text-slate-700">To</label>
-			<select name="toId" id="toId" value="" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
-				<option value="" selected disabled>Select</option>
-				<%for (const b of budgets){%>
-					<option value="<%= b.id %>">BGT: <%= b.name %></option>
-				<%}%>
-				<%for (const a of accounts.filter(x => x.id !== account.id)){%>
-					<option value="<%= a.id %>">ACC: <%= a.name %></option>
-				<%}%>
-			</select>
-		</div>
-		<button type="submit" class="w-full max-w-xl rounded-md bg-blue-500 text-white px-3 py-1">Transfer</button>
+		<button type="submit" class="w-full max-w-xl rounded-md bg-blue-500 text-white px-3 py-1">Expense</button>
 	</form>
-	<button id="btn-transact" class="rounded-full bg-slate-500 size-12 absolute right-5 bottom-5 flex flex-col items-center justify-center text-3xl font-bold cursor-pointer">+</button>
-	<div id="floating-menu" class="hidden">
-	<button id="btn-income" class="rounded-full bg-green-500 size-12 absolute right-28 bottom-5 flex flex-col items-center justify-center cursor-pointer"><svg style="max-width: 80%;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title></title> <g id="Complete"> <g id="arrow-up-right"> <g> <polyline data-name="Right" fill="none" id="Right-2" points="18.7 12.4 18.7 5.3 11.6 5.3" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polyline> <line fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="5.3" x2="17.1" y1="18.7" y2="6.9"></line> </g> </g> </g> </g></svg></button>
-	<button id="btn-expense" class="rounded-full bg-red-500 size-12 absolute right-5 bottom-28 flex flex-col items-center justify-center text-3xl font-bold cursor-pointer"><svg style="max-width: 80%" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title></title> <g id="Complete"> <g id="arrow-down-right"> <g> <polyline data-name="Right" fill="none" id="Right-2" points="11.6 18.7 18.7 18.7 18.7 11.6" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polyline> <line fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="5.3" x2="17.1" y1="5.3" y2="17.1"></line> </g> </g> </g> </g></svg></button>
-	<button id="btn-transfer" class="rounded-full bg-yellow-500 size-12 absolute right-20 bottom-20 flex flex-col items-center justify-center text-3xl font-bold cursor-pointer"><svg style="max-width: 80%" viewBox="0 -9 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>arrow-left-right</title> <desc>Created with Sketch Beta.</desc> <defs> </defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"> <g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-256.000000, -1200.000000)" fill="#000000"> <path d="M287.718,1206.22 L281.795,1200.28 C281.404,1199.89 280.768,1199.89 280.376,1200.28 C279.984,1200.68 279.984,1201.31 280.376,1201.71 L284.635,1205.98 L259.365,1205.98 L263.624,1201.71 C264.016,1201.31 264.016,1200.68 263.624,1200.28 C263.232,1199.89 262.597,1199.89 262.205,1200.28 L256.282,1206.22 C256.073,1206.43 255.983,1206.71 255.998,1206.98 C255.983,1207.26 256.073,1207.54 256.282,1207.75 L262.205,1213.69 C262.597,1214.08 263.232,1214.08 263.624,1213.69 C264.016,1213.29 264.016,1212.66 263.624,1212.26 L259.365,1207.99 L284.635,1207.99 L280.376,1212.26 C279.984,1212.66 279.984,1213.29 280.376,1213.69 C280.768,1214.08 281.404,1214.08 281.795,1213.69 L287.718,1207.75 C287.927,1207.54 288.017,1207.26 288.002,1206.98 C288.017,1206.71 287.927,1206.43 287.718,1206.22" id="arrow-left-right" sketch:type="MSShapeGroup"> </path> </g> </g> </g></svg></button>
-	</div>
+	<button id="btn-transact" class="transition-all duration-100 rounded-full bg-slate-500 size-12 absolute right-5 bottom-5 flex flex-col items-center justify-center text-3xl font-bold cursor-pointer z-20">+</button>
+	
+	<button id="btn-income" class="ease-in-out transition-all duration-100 -z-10 rounded-full bg-green-500 size-12 absolute right-5 bottom-5 flex flex-col items-center justify-center cursor-pointer"><svg style="max-width: 80%;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title></title> <g id="Complete"> <g id="arrow-up-right"> <g> <polyline data-name="Right" fill="none" id="Right-2" points="18.7 12.4 18.7 5.3 11.6 5.3" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polyline> <line fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="5.3" x2="17.1" y1="18.7" y2="6.9"></line> </g> </g> </g> </g></svg></button>
+	<button id="btn-expense" class="ease-in-out transition-all duration-100 -z-10 rounded-full bg-red-500 size-12 absolute right-5 bottom-5 flex flex-col items-center justify-center text-3xl font-bold cursor-pointer"><svg style="max-width: 80%" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title></title> <g id="Complete"> <g id="arrow-down-right"> <g> <polyline data-name="Right" fill="none" id="Right-2" points="11.6 18.7 18.7 18.7 18.7 11.6" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polyline> <line fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="5.3" x2="17.1" y1="5.3" y2="17.1"></line> </g> </g> </g> </g></svg></button>
+	<button id="btn-transfer" class="ease-in-out transition-all duration-100 -z-10 rounded-full bg-yellow-500 size-12 absolute right-5 bottom-5 flex flex-col items-center justify-center text-3xl font-bold cursor-pointer"><svg style="max-width: 80%" viewBox="0 -9 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>arrow-left-right</title> <desc>Created with Sketch Beta.</desc> <defs> </defs> <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage"> <g id="Icon-Set" sketch:type="MSLayerGroup" transform="translate(-256.000000, -1200.000000)" fill="#000000"> <path d="M287.718,1206.22 L281.795,1200.28 C281.404,1199.89 280.768,1199.89 280.376,1200.28 C279.984,1200.68 279.984,1201.31 280.376,1201.71 L284.635,1205.98 L259.365,1205.98 L263.624,1201.71 C264.016,1201.31 264.016,1200.68 263.624,1200.28 C263.232,1199.89 262.597,1199.89 262.205,1200.28 L256.282,1206.22 C256.073,1206.43 255.983,1206.71 255.998,1206.98 C255.983,1207.26 256.073,1207.54 256.282,1207.75 L262.205,1213.69 C262.597,1214.08 263.232,1214.08 263.624,1213.69 C264.016,1213.29 264.016,1212.66 263.624,1212.26 L259.365,1207.99 L284.635,1207.99 L280.376,1212.26 C279.984,1212.66 279.984,1213.29 280.376,1213.69 C280.768,1214.08 281.404,1214.08 281.795,1213.69 L287.718,1207.75 C287.927,1207.54 288.017,1207.26 288.002,1206.98 C288.017,1206.71 287.927,1206.43 287.718,1206.22" id="arrow-left-right" sketch:type="MSShapeGroup"> </path> </g> </g> </g></svg></button>
+	
 </main>

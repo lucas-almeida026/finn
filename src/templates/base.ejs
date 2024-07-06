@@ -1,14 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title><%= title%></title>
-	<style><%= tailwindcss %></style>
-  <script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
+	<title>
+		<%= title%>
+	</title>
+	<style>
+		<%= tailwindcss %>
+	</style>
+	<script>
+	function reactive(initialValue) {
+		let listeners = [];
+		let value = initialValue;
+
+		const proxy = new Proxy({}, {
+			get(_, prop) {
+				if (prop === 'value') return value;
+				if (prop === 'subscribe') return listener => listeners.push(listener);
+				if (prop === 'unsubscribe') return listener => {
+					listeners = listeners.filter(l => l !== listener);
+				};
+			},
+			set(_, prop, newValue) {
+				if (prop === 'value') {
+					value = newValue;
+					listeners.forEach(listener => listener(newValue));
+				}
+				return true;
+			}
+		});
+
+		return proxy;
+	}
+	</script>
+	<script src="https://unpkg.com/htmx.org@2.0.0"
+		integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
+		crossorigin="anonymous"></script>
 </head>
+
 <body>
 	<%- body %>
 	<script><%- script %></script>
 </body>
+
 </html>

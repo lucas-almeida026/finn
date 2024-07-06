@@ -25,10 +25,16 @@ tasks:
 [x] list budgets from account
 
 // transactions v2
-[ ] expense to budget
+[x] expense to budget
 [ ] transfer from budget to account
 [ ] transfer from account to budget
 [ ] transfer from budget to budget
 
 //bugfixes:
 [ ] if income or expense is canceled an error is thrown as "invalid amount"
+
+//improvements:
+[ ] use hx-redirect instead of redirect function
+[ ] transform string into number on client instead using zod.transform
+[ ] display forms on modals
+[x] use animations

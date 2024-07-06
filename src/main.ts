@@ -5,8 +5,8 @@ import axios from 'axios'
 import ejs from 'ejs'
 import { Account, Budget } from './core'
 
-const app = express();
-app.use(express.json());
+const app = express()
+app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 
 (async () => {
@@ -21,13 +21,14 @@ app.use(express.urlencoded({ extended: true }));
 				list: () => client.get<Account[]>('/accounts'),
 				create: (data: any) => client.post<Account>('/accounts', data)
 			},
-			transfer: (data: any) => client.post<{from: Account, to: Account}>('/transfer', data),
+			transfer: (data: any) => client.post<{ from: Account, to: Account }>('/transfer', data),
 			budgets: {
 				list: (accountId: string) => client.get<Budget[]>('/budgets', {
 					params: accountId ? { accountId } : {}
 				}),
 				create: (data: any) => client.post<Budget>('/budgets', data)
-			}
+			},
+			expense: (amount: number, targetId: string, data?: string) => client.post('/expense', { amount, targetId, data })
 		}
 	})()
 
@@ -44,7 +45,7 @@ app.use(express.urlencoded({ extended: true }));
 	const HomePage = (data: any) => page('Home', indexPage, data, floatingBtnJs)
 
 	function redirect(url: string, script = '0;') {
-		return baseTemplate({ title: '', body: `<div hx-get="${url}" hx-replace-url="${url}" hx-trigger="load" hx-target="body"></div>`, tailwindcss, script})
+		return baseTemplate({ title: '', body: `<div hx-get="${url}" hx-replace-url="${url}" hx-trigger="load" hx-target="body"></div>`, tailwindcss, script })
 	}
 
 	app.get('/', async (req, res) => {
@@ -73,28 +74,50 @@ app.use(express.urlencoded({ extended: true }));
 
 	app.get('/account/create', async (req, res) => {
 		const has = (await api.accounts.list()).data.length > 0
-		return res.send(page('Create Account', createAccPage, {defaultName: has ? '' : 'main'}))
+		return res.send(page('Create Account', createAccPage, { defaultName: has ? '' : 'main' }))
 	})
 
 	app.post('/account/create', async (req, res) => {
 		api.accounts.create(req.body)
-		.then(({data: created}) => {
-			res.status(200).send(redirect(`/?accountId=${created.id}`))
-		})
-		.catch((err) => {
-			console.log(err?.data?.message ?? err?.data ?? err)
-			res.status(500).send('')
-		})
+			.then(({ data: created }) => {
+				res.status(200).send(redirect(`/?accountId=${created.id}`))
+			})
+			.catch((err) => {
+				console.log(err?.data?.message ?? err?.data ?? err)
+				res.status(500).send('')
+			})
 
 	})
 
 	app.post('/transfer', async (req, res) => {
 		try {
-			const {data: result} = await api.transfer(req.body)
+			const { data: result } = await api.transfer(req.body)
 			res.setHeader('HX-Refresh', 'true')
 			res.send('')
 		} catch (e: any) {
 			console.error(e?.response?.data?.message ?? e?.response?.data ?? e)
+			res.status(500).send('')
+		}
+	})
+
+	app.post('/expense', async (req, res) => {
+		const { amount, target } = req.body
+		if (!amount || !target) {
+			return res.status(400).send('')
+		}
+		try {
+			const { data: result } = await api.expense(amount, target)
+			if (result.kind === 'account') {
+				res.setHeader('HX-Retarget', '#account-balance')
+				res.setHeader('HX-Reswap', 'innerHTML')
+				res.send(`Balance: R$${(result.balance / 100).toFixed(2)}`)
+			} else {
+				res.setHeader('HX-Retarget', `#bgt-${result.id}-balance`)
+				res.setHeader('HX-Reswap', 'innerHTML')
+				res.send(`R$${(result.amount / 100).toFixed(2)}`)
+			}
+		} catch (e: any) {
+			console.log(e?.response?.data?.message ?? e?.response?.data ?? e)
 			res.status(500).send('')
 		}
 	})
