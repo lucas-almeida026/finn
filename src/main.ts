@@ -107,6 +107,7 @@ app.use(express.urlencoded({ extended: true }));
 		}
 		try {
 			const { data: result } = await api.expense(amount, target)
+			res.setHeader('HX-Notify', 'resetForm;closeForm')
 			if (result.kind === 'account') {
 				res.setHeader('HX-Retarget', '#account-balance')
 				res.setHeader('HX-Reswap', 'innerHTML')

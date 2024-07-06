@@ -10,39 +10,67 @@
 	<style>
 		<%= tailwindcss %>
 	</style>
-	<script>
-	function reactive(initialValue) {
-		let listeners = [];
-		let value = initialValue;
-
-		const proxy = new Proxy({}, {
-			get(_, prop) {
-				if (prop === 'value') return value;
-				if (prop === 'subscribe') return listener => listeners.push(listener);
-				if (prop === 'unsubscribe') return listener => {
-					listeners = listeners.filter(l => l !== listener);
-				};
-			},
-			set(_, prop, newValue) {
-				if (prop === 'value') {
-					value = newValue;
-					listeners.forEach(listener => listener(newValue));
-				}
-				return true;
-			}
-		});
-
-		return proxy;
-	}
-	</script>
 	<script src="https://unpkg.com/htmx.org@2.0.0"
-		integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw"
-		crossorigin="anonymous"></script>
+		integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous">
+		</script>
+	<script>
+		function reactive(initialValue) {
+			let listeners = [];
+			let value = initialValue;
+
+			const proxy = new Proxy({}, {
+				get(_, prop) {
+					if (prop === 'value') return value;
+					if (prop === 'subscribe') return listener => listeners.push(listener);
+					if (prop === 'unsubscribe') return listener => {
+						listeners = listeners.filter(l => l !== listener);
+					};
+				},
+				set(_, prop, newValue) {
+					if (prop === 'value') {
+						value = newValue;
+						listeners.forEach(listener => listener(newValue));
+					}
+					return true;
+				}
+			});
+
+			return proxy;
+		}
+
+		function Observable() {
+			const subscribers = {};
+			let id = 0;
+			return {
+				subscribe: (event, fn) => {
+					if (!subscribers[event]) subscribers[event] = [];
+					subscribers[event].push({fn, id});
+					const unsubFn = () => subscribers[event] = subscribers[event].filter(s => s.id !== id)
+					id++;
+					return unsubFn;
+				},
+				notify: (event, data) => {
+					subscribers[event]?.forEach(s => s.fn(data));
+				}
+			}
+		}
+		const $notifications = Observable();
+		document.addEventListener('htmx:afterRequest', (e) => {
+			const hxNotify = e.detail.xhr.getResponseHeader('HX-Notify')
+			if (hxNotify) {
+				const events = hxNotify.split(';')
+				for (const eventStr of events) {
+					const [event, data] = eventStr.split(':')
+					$notifications.notify(event, data)
+				}
+			}
+		})
+	</script>
 </head>
 
 <body>
 	<%- body %>
-	<script><%- script %></script>
+		<script><%- script %></script>
 </body>
 
 </html>
