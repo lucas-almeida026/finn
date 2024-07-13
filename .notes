@@ -26,9 +26,9 @@ tasks:
 
 // transactions v2
 [x] expense to budget
-[ ] transfer from budget to account
-[ ] transfer from account to budget
-[ ] transfer from budget to budget
+[x] transfer from budget to account
+[x] transfer from account to budget
+[x] transfer from budget to budget
 
 //bugfixes:
 [ ] if income or expense is canceled an error is thrown as "invalid amount"
