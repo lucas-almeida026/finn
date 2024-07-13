@@ -13,28 +13,28 @@ user stories:
 - I can make reports and charts of income, expense, transfer, budget and balance over time
 
 tasks:
-[x] create create-account page
+- [x] create create-account page
 
 // transaction v1
-[x] income to account
-[x] expense to account
-[x] transfer from account to account
+- [x] income to account
+- [x] expense to account
+- [x] transfer from account to account
 
 // budgets v1
-[x] create budget to account
-[x] list budgets from account
+- [x] create budget to account
+- [x] list budgets from account
 
 // transactions v2
-[x] expense to budget
-[x] transfer from budget to account
-[x] transfer from account to budget
-[x] transfer from budget to budget
+- [x] expense to budget
+- [x] transfer from budget to account
+- [x] transfer from account to budget
+- [x] transfer from budget to budget
 
 //bugfixes:
-[ ] if income or expense is canceled an error is thrown as "invalid amount"
+- [ ] if income or expense is canceled an error is thrown as "invalid amount"
 
 //improvements:
-[ ] use hx-redirect instead of redirect function
-[ ] transform string into number on client instead using zod.transform
-[ ] display forms on modals
-[x] use animations
+- [ ] use hx-redirect instead of redirect function
+- [ ] transform string into number on client instead using zod.transform
+- [ ] display forms on modals
+- [x] use animations
