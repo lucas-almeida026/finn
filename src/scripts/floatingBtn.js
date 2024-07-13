@@ -8,9 +8,72 @@ const formExpense = document.getElementById('form-expense');
 const btnNewBudget = document.getElementById('btn-new-budget');
 const budgetList = document.getElementById('budget-list');
 const bgForm = document.getElementById('bg-form');
+const transferFromSelect = document.getElementById('transferFrom');
+const transferToSelect = document.getElementById('transferTo');
 
 const showForm = reactive(null)
 const showButtons = reactive(false)
+
+const asAccount = x => ({ kind: 'account', id: x.id, name: x.name })
+const asBudget = x => ({ kind: 'budget', id: x.id, name: x.name })
+const transferFrom = reactive(asAccount(__data.account).id)
+const transferTo = reactive(null)
+
+const transferFromOptions = [
+	...__data.accounts.map(asAccount),
+	...__data.budgets.map(asBudget)
+]
+const transferToOptions = reactive(transferFromOptions.filter(x => x.id !== transferFrom.value))
+
+
+transferFrom.subscribe(() => {
+	transferToOptions.value = transferFromOptions.filter(x => x.id !== transferFrom.value)
+	renderFromOptions(transferFromOptions, transferFrom.value)
+	renderToOptions(transferToOptions.value, transferTo.value)
+})
+transferFromSelect.addEventListener('change', e => {
+	transferFrom.value = e.target.value
+})
+transferToSelect.addEventListener('change', e => {
+	transferTo.value = e.target.value
+})
+function renderFromOptions(opts, curr) {
+	for (const c of Array.from(transferFromSelect.children)) {
+		transferFromSelect.removeChild(c)
+	}
+	for (const opt of opts) {
+		const optEl = document.createElement('option')
+		optEl.value = opt.id
+		optEl.textContent = opt.kind === 'budget' ? 'BGT: ' + opt.name : 'ACC: ' + opt.name
+		if (opt.id === curr) {
+			optEl.selected = true
+		}
+		transferFromSelect.appendChild(optEl)
+	}
+}
+
+function renderToOptions(opts, curr) {
+	for (const c of Array.from(transferToSelect.children)) {
+		transferToSelect.removeChild(c)
+	}
+	const option = document.createElement('option')
+	option.value = ""
+	option.textContent = "Select"
+	option.disabled = true
+	if (!opts.some(opt => opt.id === curr)) {
+		option.selected = true
+	}
+	transferToSelect.appendChild(option)
+	for (const opt of opts) {
+		const optEl = document.createElement('option')
+		optEl.value = opt.id
+		optEl.textContent = opt.kind === 'budget' ? 'BGT: ' + opt.name : 'ACC: ' + opt.name
+		if (opt.id === curr) {
+			optEl.selected = true
+		}
+		transferToSelect.appendChild(optEl)
+	}
+}
 
 let floatingMenuOpen = false;
 let formTransferVisible = false;
@@ -53,7 +116,7 @@ function hideFormFn() {
 		showForm.value = null
 		bgForm.classList.replace('z-10', '-z-10')
 		bgForm.classList.replace('opacity-100', 'opacity-0')
-	}	
+	}
 }
 
 showButtons.subscribe(value => {
@@ -96,12 +159,12 @@ btnIncome.addEventListener('click', () => {
 				accountId
 			})
 		})
-		.then(res => res.json())
-		.then(() => window.location.reload())
-		.catch(err => {
-			alert('could not create transaction')
-			console.error(err)
-		})
+			.then(res => res.json())
+			.then(() => window.location.reload())
+			.catch(err => {
+				alert('could not create transaction')
+				console.error(err)
+			})
 	} catch (e) {
 		console.error(e)
 		alert('Invalid amount')
@@ -122,6 +185,8 @@ btnExpense.addEventListener('click', () => {
 btnTransfer.addEventListener('click', () => {
 	if (showForm.value === null) {
 		showFormFn(formTransfer)
+		renderFromOptions(transferFromOptions, transferFrom.value)
+		renderToOptions(transferToOptions.value, transferTo.value)
 	} else if (showForm.value === formExpense) {
 		replaceFormFn(formTransfer)
 	} else {
@@ -166,3 +231,4 @@ $notifications.subscribe('closeForm', () => {
 	hideFormFn()
 	showButtons.value = false
 })
+

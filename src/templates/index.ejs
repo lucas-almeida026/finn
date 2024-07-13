@@ -25,25 +25,19 @@
 			</div>
 			<div class="w-full max-w-xl">
 				<label for="fromId" class="text-slate-700">From</label>
-				<select name="fromId" id="fromId" value="<%= account.id %>" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
-					<%for (const a of accounts) {%>
-						<option value="<%= a.id %>" <%= a.id === account.id ? 'selected' : ''%>>ACC: <%= a.name %></option>
-					<%}%>
-					<%for (const b of budgets) {%>
-						<option value="<%= b.id %>">BGT: <%= b.name %></option>
-					<%}%>
+				<select name="fromId" id="transferFrom" value="<%= account.id %>" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
 				</select>
 			</div>
 			<div class="w-full max-w-xl">
 				<label for="toId" class="text-slate-700">To</label>
-				<select name="toId" id="toId" value="" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
+				<select name="toId" id="transferTo" value="" class="w-full px-3 py-1 rounded-md border-slate-300 border-2 focus:border-blue-200 outline-none">
 					<option value="" selected disabled>Select</option>
-					<%for (const b of budgets){%>
+					<!-- <%for (const b of budgets){%>
 						<option value="<%= b.id %>">BGT: <%= b.name %></option>
 					<%}%>
 					<%for (const a of accounts.filter(x => x.id !== account.id)){%>
 						<option value="<%= a.id %>">ACC: <%= a.name %></option>
-					<%}%>
+					<%}%> -->
 				</select>
 			</div>
 			<button type="submit" class="mt-4 w-full max-w-xl rounded-md bg-blue-500 text-white px-3 py-1">Transfer</button>

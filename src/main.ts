@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 				list: () => client.get<Account[]>('/accounts'),
 				create: (data: any) => client.post<Account>('/accounts', data)
 			},
-			transfer: (data: any) => client.post<{ from: Account, to: Account }>('/transfer', data),
+			transfer: (data: any) => client.post<{ from: Account | Budget, to: Account | Budget }>('/transfer', data),
 			budgets: {
 				list: (accountId: string) => client.get<Budget[]>('/budgets', {
 					params: accountId ? { accountId } : {}
@@ -42,7 +42,7 @@ app.use(express.urlencoded({ extended: true }));
 		return baseTemplate({ title, body: body(data), tailwindcss, script })
 	}
 
-	const HomePage = (data: any) => page('Home', indexPage, data, floatingBtnJs)
+	const HomePage = (data: any) => page('Home', indexPage, data, `const __data = JSON.parse('${JSON.stringify(data)}');${floatingBtnJs}`)
 
 	function redirect(url: string, script = '0;') {
 		return baseTemplate({ title: '', body: `<div hx-get="${url}" hx-replace-url="${url}" hx-trigger="load" hx-target="body"></div>`, tailwindcss, script })
@@ -92,6 +92,7 @@ app.use(express.urlencoded({ extended: true }));
 	app.post('/transfer', async (req, res) => {
 		try {
 			const { data: result } = await api.transfer(req.body)
+			res.setHeader('HX-Notify', 'resetForm;closeForm')
 			res.setHeader('HX-Refresh', 'true')
 			res.send('')
 		} catch (e: any) {
